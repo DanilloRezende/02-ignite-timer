@@ -1,4 +1,9 @@
 /* eslint-disable prettier/prettier */
+
 export function Home() {
-  return <h1>Ola</h1>
+  return (
+    <div>
+      <h1>Home</h1>
+    </div>
+  )
 }
