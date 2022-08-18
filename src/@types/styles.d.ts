@@ -17,3 +17,7 @@ declare module 'styled-components' {
     // e extendemos a ela ou seja adicionamos a ela o ThemeType que foi instanciado aqui
     export interface DefaultTheme extends ThemeType{}
 }
+
+//Objetivo é basicamente criar "tipagem" para os casos em que não há um já pre definido
+//reforçando assim os beneficios que o TS trazem a aplicação
+//isto é algo que geralmente só se utiliza com o styled-components e usualmente 1 vez por aplicação
