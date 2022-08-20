@@ -59,8 +59,33 @@ export const HistoryList = styled.main`
             &:last-child{
                 padding-right: 1.5rem;
             }
-        }
+        }       
+    }
+`
 
-        
+// criamos a seguinte cons para interarmos e definir EXATAMENTE qual os valores atribuidos aos elementos do objeto.
+const STATUS_COLOR = {
+    yellow: 'yellow-500',
+    green: 'green-500',
+    red: 'red-500',
+} as const 
+// ao instanciar o objeto ele é "tipado" de uma forma que 3 elementos podem ser strings quaisqueres kkkk, ao reforçarmos novamente pelo "as const" estamos dizendo que serão strings mas exatamente coms os valores que foram colocados.
+ 
+// Criamos uma interface para por meio do <generic> passar a "tipagem" ao nosso span 
+interface StatusProps {
+    statusColor: keyof typeof STATUS_COLOR;
+}
+
+export const Status = styled.span<StatusProps>`
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    &::before{  //Before e after são elementos que ficam dentro da tag no começo ou final de qualquer conteudo
+        content:''; //devemos colocar este conteudo em branco mesmo para ser renderizado 
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 9999px;
+        background: ${props => props.theme[STATUS_COLOR[props.statusColor]]}
     }
 `
