@@ -73,7 +73,9 @@ const STATUS_COLOR = {
  
 // Criamos uma interface para por meio do <generic> passar a "tipagem" ao nosso span 
 interface StatusProps {
-    statusColor: keyof typeof STATUS_COLOR;
+    // statusColor: 'yellow' | 'red' | 'green';
+    statusColor: keyof typeof STATUS_COLOR; // desta formna n precisamos colocar elemento por elemento do STATUS_COLORS 2X
+    
 }
 
 export const Status = styled.span<StatusProps>`
