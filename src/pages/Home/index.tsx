@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as zod from "zod"
 import { CountdownContainer, FormContainer, HomeContainer, MinutesAmountInput, Separetor, StartCountdownButton, Taskinput } from "./styles";
 import { useEffect, useState } from "react";
-import { differenceInSeconds } from "date-fns/esm";
+import { differenceInSeconds } from "date-fns";
 
 const newCycleFormValidationSchema = zod.object({
   task: zod.string().min(1, 'Informe a tarefa'),
@@ -48,11 +48,17 @@ export function Home() {
   const activeCycle = cycles.find((cycle) => cycle.id === activeCyclesId)
 
   useEffect(() => {
+    let interval: number;
+
     if (activeCycle) {
-      setInterval(() => {
+       interval = setInterval(() => {
         setAmountSecondsPassed(
           differenceInSeconds(new Date(), activeCycle.startDate))// desta forma evitamos as possiveis diferenças que podem haver 
       }, 1000)
+    }
+
+    return () => {
+      clearInterval(interval)
     }
   }, [activeCycle])
 
@@ -71,7 +77,7 @@ export function Home() {
     // Devemos setar atraves de uma arrow function conceito de clousures.
     setCycles((state) => [...state, newCycle])
     setActiveCyclesId(id)
-
+    setAmountSecondsPassed(0)
     reset();
   }  
 
@@ -84,6 +90,11 @@ export function Home() {
   const minutes = String(minutesAmount).padStart(2, '0')
   const seconds = String(secondsAmount).padStart(2, '0')
 
+  useEffect(() => {
+    if(activeCycle){
+    document.title = `${minutes}:${seconds}`
+  }
+  }, [minutes, seconds, activeCycle])
 
   const task = watch("task")
   const isSubmitDisabled = !task;
