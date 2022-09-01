@@ -2,30 +2,13 @@
 
 import { HandPalm, Play } from "phosphor-react";
 
-import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import * as zod from "zod"
-import { CountdownContainer, FormContainer, HomeContainer, MinutesAmountInput, Separetor, StartCountdownButton, StopCountdownButton, Taskinput } from "./styles";
-import { useEffect, useState } from "react";
-import { differenceInSeconds } from "date-fns";
-import { NewCycleForm } from "./NewCycleForm";
-import { Countdown } from "./Countdown";
 
-const newCycleFormValidationSchema = zod.object({
-  task: zod.string().min(1, 'Informe a tarefa'),
-  minutesAmount: zod.number()
-  .min(1, 'O ciclo precisa ser de no mínimo 5 minutos.')
-  .max(60, 'O ciclo precisa ser de no máximo 60 minutos.'),
-})
+import { HomeContainer, StartCountdownButton, StopCountdownButton } from "./styles";
+import { createContext, useEffect, useState } from "react";
+import { NewCycleForm } from "./components/NewCycleForm";
+import { Countdown } from "./components/Countdown";
 
-// geralmente utilizamos o interface para criar uma tipagem nova para um objeto novo
-// interface NewCycleFormAmount {
-//   task: string;
-//   minutesAmount: number;
-// }
 
-// type é melhor utilizado para quando inferimos a tipagem de um objeto que já existe 
-type NewCycleFormAmount = zod.infer<typeof newCycleFormValidationSchema>
 
 interface Cycle {
   id: string;
@@ -36,73 +19,50 @@ interface Cycle {
   finishedDate?: Date;
 }
 
+interface CyclesContextType {
+  activeCycle: Cycle | undefined;
+  activeCyclesId: string | null;
+  markCurrentCycleAsFinished: () =>void;
+}
+
+export const CyclesContext = createContext({} as CyclesContextType)
+
 export function Home() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [activeCyclesId, setActiveCyclesId] = useState<string | null>(null);
-  const [amountSecondsPassed, setAmountSecondsPassed] = useState(0)
 
-  const { register, handleSubmit, watch, reset } = useForm<NewCycleFormAmount>({
-    resolver: zodResolver(newCycleFormValidationSchema),
-    defaultValues: {
-      task: '',
-      minutesAmount: 0
-    }
-  })
 
   const activeCycle = cycles.find((cycle) => cycle.id === activeCyclesId)
 
-  const totalSeconds = activeCycle ? activeCycle.minutesAmount * 60 : 0
+  function markCurrentCycleAsFinished() {
+    setCycles((state) => state.map((cycle) => {
+      if (cycle.id === activeCyclesId) {
+        return { ...cycle, finishedDate: new Date() }
+      } else {
+        return cycle
+      }
+    }),
+    )
+  }
 
-  useEffect(() => {
-    let interval: number;
+  // function handleCreateNewCycle(data: NewCycleFormAmount) {
+  //   const id = String(new Date().getTime())
 
-    if (activeCycle) {
-       interval = setInterval(() => {
-        const secondsDifference = differenceInSeconds(
-          new Date(), 
-          activeCycle.startDate
-        ) // desta forma evitamos as possiveis diferenças que podem haver 
+  //   const newCycle: Cycle = {
+  //     id,
+  //     task: data.task,
+  //     minutesAmount: data.minutesAmount,
+  //     startDate: new Date(),
+  //   }
 
-         if (secondsDifference >= totalSeconds) {
-           setCycles((state) => state.map((cycle) => {
-             if (cycle.id === activeCyclesId) {
-               return { ...cycle, finishedDate: new Date() }
-             } else {
-               return cycle
-             }
-           }),
-           )
-           setAmountSecondsPassed(totalSeconds)
-           clearInterval(interval)
-         } else {
-           setAmountSecondsPassed(secondsDifference)
-         }
-       }, 1000)
-    }
-
-    return () => {
-      clearInterval(interval)
-    } 
-  }, [activeCycle, totalSeconds, activeCyclesId])
-
-  function handleCreateNewCycle(data: NewCycleFormAmount) {
-    const id = String(new Date().getTime())
-
-    const newCycle: Cycle = {
-      id,
-      task: data.task,
-      minutesAmount: data.minutesAmount,
-      startDate: new Date(),
-    }
-
-    // Poderiamos utilizar o spreed operator para incluir no novo valor os valores antigos pois se trata de uma nova lista
-    // Porem como semrpe que utilizamos uma função quando atualizamos um estado e ele depende da informação anterior
-    // Devemos setar atraves de uma arrow function conceito de clousures.
-    setCycles((state) => [...state, newCycle])
-    setActiveCyclesId(id)
-    setAmountSecondsPassed(0)
-    reset();
-  }  
+  //   // Poderiamos utilizar o spreed operator para incluir no novo valor os valores antigos pois se trata de uma nova lista
+  //   // Porem como semrpe que utilizamos uma função quando atualizamos um estado e ele depende da informação anterior
+  //   // Devemos setar atraves de uma arrow function conceito de clousures.
+  //   setCycles((state) => [...state, newCycle])
+  //   setActiveCyclesId(id)
+  //   setAmountSecondsPassed(0)
+  //   reset();
+  // }
 
   function handleInterruptCycle() {
     setCycles(state =>
@@ -117,41 +77,28 @@ export function Home() {
     setActiveCyclesId(null);
   }
 
-  
-  const currentSeconds = activeCycle ? totalSeconds - amountSecondsPassed : 0
 
-  const minutesAmount = Math.floor(currentSeconds / 60)
-  const secondsAmount = currentSeconds % 60
+  // const task = watch("task")
+  // const isSubmitDisabled = !task;
 
-  const minutes = String(minutesAmount).padStart(2, '0')
-  const seconds = String(secondsAmount).padStart(2, '0')
 
-  useEffect(() => {
-    if(activeCycle){
-    document.title = `${minutes}:${seconds}`
-  }
-  }, [minutes, seconds, activeCycle])
-
-  const task = watch("task")
-  const isSubmitDisabled = !task;
-  
-
-  return (   
+  return (
     <HomeContainer>
-      <form onSubmit={handleSubmit(handleCreateNewCycle)}>
-        <NewCycleForm />
-        <Countdown />        
-
-        { activeCycle ? (
+      <form /*onSubmit={handleSubmit(handleCreateNewCycle)}*/>
+        <CyclesContext.Provider value={{activeCycle, activeCyclesId, markCurrentCycleAsFinished}}>
+        {/* <NewCycleForm /> */}
+        <Countdown />
+        </CyclesContext.Provider>
+        {activeCycle ? (
           <StopCountdownButton onClick={handleInterruptCycle} type="button">
-          <HandPalm size={24} />
-          Interromper
+            <HandPalm size={24} />
+            Interromper
           </StopCountdownButton>
         ) : (
-          <StartCountdownButton disabled={isSubmitDisabled} type="submit">
-          <Play size={24} />
-          Começar
-        </StartCountdownButton>
+          <StartCountdownButton /*disabled={isSubmitDisabled}*/ type="submit">
+            <Play size={24} />
+            Começar
+          </StartCountdownButton>
         )}
       </form>
     </HomeContainer>
