@@ -4,33 +4,14 @@ import { HandPalm, Play } from "phosphor-react";
 
 
 import { HomeContainer, StartCountdownButton, StopCountdownButton } from "./styles";
-import { createContext, useState } from "react";
+import { useContext } from "react";
 import { NewCycleForm } from "./components/NewCycleForm";
 import { FormProvider, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as zod from "zod"
 import { Countdown } from "./components/Countdown";
+import { CyclesContext } from "../../contexts/CyclesContext";
 
-
-
-interface Cycle {
-  id: string;
-  task: string;
-  minutesAmount: number;
-  startDate: Date;
-  interruptedDate?: Date;
-  finishedDate?: Date;
-}
-
-interface CyclesContextType {
-  activeCycle: Cycle | undefined;
-  activeCyclesId: string | null;
-  markCurrentCycleAsFinished: () =>void;
-  amountSecondsPassed: number;
-  setSecondsPassed: (seconds: number) => void;
-}
-
-export const CyclesContext = createContext({} as CyclesContextType)
 
 const newCycleFormValidationSchema = zod.object({
   task: zod.string().min(1, 'Informe a tarefa'),
@@ -49,9 +30,8 @@ const newCycleFormValidationSchema = zod.object({
 type NewCycleFormAmount = zod.infer<typeof newCycleFormValidationSchema>
 
 export function Home() {
-  const [cycles, setCycles] = useState<Cycle[]>([]);
-  const [activeCyclesId, setActiveCyclesId] = useState<string | null>(null);
-  const [amountSecondsPassed, setAmountSecondsPassed] = useState(0)
+  const { activeCycle, createNewCycle, interruptCurrentCycle } = 
+    useContext(CyclesContext)
 
   const newCycleForm = useForm<NewCycleFormAmount>({
     resolver: zodResolver(newCycleFormValidationSchema),
@@ -61,57 +41,7 @@ export function Home() {
     }
   })
 
-  const {  handleSubmit, watch, reset } = newCycleForm
-
-  const activeCycle = cycles.find((cycle) => cycle.id === activeCyclesId)
-
-  function setSecondsPassed(seconds: number) {
-    setAmountSecondsPassed(seconds)
-  }
-
-  function markCurrentCycleAsFinished() {
-    setCycles((state) => state.map((cycle) => {
-      if (cycle.id === activeCyclesId) {
-        return { ...cycle, finishedDate: new Date() }
-      } else {
-        return cycle
-      }
-    }),
-    )
-  }
-
-  function handleCreateNewCycle(data: NewCycleFormAmount) {
-    const id = String(new Date().getTime())
-
-    const newCycle: Cycle = {
-      id,
-      task: data.task,
-      minutesAmount: data.minutesAmount,
-      startDate: new Date(),
-    }
-
-    // Poderiamos utilizar o spreed operator para incluir no novo valor os valores antigos pois se trata de uma nova lista
-    // Porem como semrpe que utilizamos uma função quando atualizamos um estado e ele depende da informação anterior
-    // Devemos setar atraves de uma arrow function conceito de clousures.
-    setCycles((state) => [...state, newCycle])
-    setActiveCyclesId(id)
-    setAmountSecondsPassed(0)
-    reset();
-  }
-
-  function handleInterruptCycle() {
-    setCycles(state =>
-      state.map((cycle) => {
-        if (cycle.id === activeCyclesId) {
-          return { ...cycle, interruptedDate: new Date() }
-        } else {
-          return cycle
-        }
-      }),
-    )
-    setActiveCyclesId(null);
-  }
-
+const {  handleSubmit, watch, /* reset */ } = newCycleForm
 
   const task = watch("task")
   const isSubmitDisabled = !task;
@@ -119,15 +49,14 @@ export function Home() {
 
   return (
     <HomeContainer>
-      <form onSubmit={handleSubmit(handleCreateNewCycle)}>
-        <CyclesContext.Provider value={{activeCycle, activeCyclesId, markCurrentCycleAsFinished, amountSecondsPassed, setSecondsPassed}}>
+      <form onSubmit={handleSubmit(createNewCycle)}>
+        
         <FormProvider {...newCycleForm}>
           <NewCycleForm />
         </FormProvider> 
         <Countdown />
-        </CyclesContext.Provider>
         {activeCycle ? (
-          <StopCountdownButton onClick={handleInterruptCycle} type="button">
+          <StopCountdownButton onClick={interruptCurrentCycle} type="button">
             <HandPalm size={24} />
             Interromper
           </StopCountdownButton>
