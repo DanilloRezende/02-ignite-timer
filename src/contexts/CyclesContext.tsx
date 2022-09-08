@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { createContext, ReactNode, useState } from 'react'
+import { createContext, ReactNode, useReducer, useState } from 'react'
 
 interface CreateCycleData {
   task: string;
@@ -34,7 +34,13 @@ interface CyclesContextProviderProps {
 }
 
 export function CyclesContextProvider({ children }: CyclesContextProviderProps) {
-  const [cycles, setCycles] = useState<Cycle[]>([]);
+  const [cycles, dispatch] = useReducer((state: Cycle[], action: any) => {
+  
+    if (action.type ==="ADD_NEW_CYCLE") {
+      return [...state, action.payload.newCycle]
+    }
+    return state
+  }, [])
   const [activeCyclesId, setActiveCyclesId] = useState<string | null>(null);
   const [amountSecondsPassed, setAmountSecondsPassed] = useState(0)
 
@@ -45,14 +51,20 @@ export function CyclesContextProvider({ children }: CyclesContextProviderProps) 
   }
 
   function markCurrentCycleAsFinished() {
-    setCycles((state) => state.map((cycle) => {
-      if (cycle.id === activeCyclesId) {
-        return { ...cycle, finishedDate: new Date() }
-      } else {
-        return cycle
-      }
-    }),
-    )
+    dispatch({
+      type: 'MARK_CURRENT_CYCLE_AS_FINISHED',
+      payload: {
+        activeCyclesId,
+      },
+    })
+    // setCycles((state) => state.map((cycle) => {
+    //   if (cycle.id === activeCyclesId) {
+    //     return { ...cycle, finishedDate: new Date() }
+    //   } else {
+    //     return cycle
+    //   }
+    // }),
+    // )
   }
 
   function createNewCycle(data: CreateCycleData) {
@@ -64,25 +76,37 @@ export function CyclesContextProvider({ children }: CyclesContextProviderProps) 
       minutesAmount: data.minutesAmount,
       startDate: new Date(),
     }
-
+    dispatch({
+      type: 'ADD_NEW_CYCLE',
+      payload: {
+        newCycle,
+      },
+    })
     // Poderiamos utilizar o spreed operator para incluir no novo valor os valores antigos pois se trata de uma nova lista
     // Porem como semrpe que utilizamos uma função quando atualizamos um estado e ele depende da informação anterior
     // Devemos setar atraves de uma arrow function conceito de clousures.
-    setCycles((state) => [...state, newCycle])
+
+    // setCycles((state) => [...state, newCycle])
     setActiveCyclesId(id)
     setAmountSecondsPassed(0)
   }
 
   function interruptCurrentCycle() {
-    setCycles(state =>
-      state.map((cycle) => {
-        if (cycle.id === activeCyclesId) {
-          return { ...cycle, interruptedDate: new Date() }
-        } else {
-          return cycle
-        }
-      }),
-    )
+    dispatch({
+      type: 'INTERRUPT_CURRENT_CYCLE',
+      payload: {
+        activeCyclesId,
+      },
+    })
+    // setCycles(state =>
+    //   state.map((cycle) => {
+    //     if (cycle.id === activeCyclesId) {
+    //       return { ...cycle, interruptedDate: new Date() }
+    //     } else {
+    //       return cycle
+    //     }
+    //   }),
+    // )
     setActiveCyclesId(null);
   }
   
