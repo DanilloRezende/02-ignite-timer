@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { createContext, ReactNode, useReducer, useState } from 'react'
-import { ActionTypes, Cycle, cyclesReducer } from '../reducers/cycles';
+import { addNewCycleAction, interruptCurrentCycleAction, markCurrentCycleAsFinishedAction } from '../reducers/cycles/actions';
+import { Cycle, cyclesReducer } from '../reducers/cycles/reducer';
 
 interface CreateCycleData {
   task: string;
@@ -45,12 +46,7 @@ export function CyclesContextProvider({ children }: CyclesContextProviderProps) 
   }
 
   function markCurrentCycleAsFinished() {
-    dispatch({
-      type: ActionTypes.MARK_CURRENT_CYCLE_AS_FINISHED,
-      payload: {
-        activeCyclesId,
-      },
-    })
+    dispatch(markCurrentCycleAsFinishedAction())
 
   }
 
@@ -63,12 +59,7 @@ export function CyclesContextProvider({ children }: CyclesContextProviderProps) 
       minutesAmount: data.minutesAmount,
       startDate: new Date(),
     }
-    dispatch({
-      type: ActionTypes.ADD_NEW_CYCLE,
-      payload: {
-        newCycle,
-      },
-    })
+    dispatch(addNewCycleAction(newCycle))
     // Poderiamos utilizar o spreed operator para incluir no novo valor os valores antigos pois se trata de uma nova lista
     // Porem como semrpe que utilizamos uma função quando atualizamos um estado e ele depende da informação anterior
     // Devemos setar atraves de uma arrow function conceito de clousures.
@@ -77,12 +68,7 @@ export function CyclesContextProvider({ children }: CyclesContextProviderProps) 
   }
 
   function interruptCurrentCycle() {
-    dispatch({
-      type: ActionTypes.INTERRUPT_CURRENT_CYCLE,
-      payload: {
-        activeCyclesId,
-      },
-    })
+    dispatch(interruptCurrentCycleAction())
     
     
   }
